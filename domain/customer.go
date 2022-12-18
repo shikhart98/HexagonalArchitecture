@@ -1,5 +1,7 @@
 package domain
 
+import "HexagonalArch/errs"
+
 type Customer struct {
 	Id          int
 	Name        string
@@ -10,6 +12,6 @@ type Customer struct {
 }
 
 type CustomerRepository interface {
-	FindAll() ([]Customer, error)
-	ByID(string) (*Customer, error)
+	FindAll() ([]Customer, *errs.AppErrors)
+	ByID(string) (*Customer, *errs.AppErrors)
 }

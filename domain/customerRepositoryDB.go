@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"HexagonalArch/errs"
 	"database/sql"
 	"log"
 	"time"
@@ -12,13 +13,14 @@ type CustomerRepositoryDB struct {
 	client *sql.DB
 }
 
-func (d CustomerRepositoryDB) FindAll() ([]Customer, error) {
+func (d CustomerRepositoryDB) FindAll() ([]Customer, *errs.AppErrors) {
 	findAllSQLQuery := "SELECT customer_id, name, city, zipcode, date_of_birth, status FROM customers;"
 
 	rows, err := d.client.Query(findAllSQLQuery)
 	if err != nil {
-		log.Println("Error while querying customer table" + err.Error())
-		return nil, err
+		errStr := "Error while querying customer table " + err.Error()
+		log.Println(errStr)
+		return nil, errs.NewUnexpectedError(errStr)
 	}
 
 	customers := make([]Customer, 0)
@@ -26,23 +28,27 @@ func (d CustomerRepositoryDB) FindAll() ([]Customer, error) {
 		var c Customer
 		err := rows.Scan(&c.Id, &c.Name, &c.City, &c.ZipCode, &c.DateOfBirth, &c.Status)
 		if err != nil {
-			log.Println("Error while scanning customer table" + err.Error())
-			return nil, err
+			errStr := "Error while scanning customer table " + err.Error()
+			log.Println(errStr)
+			return nil, errs.NewUnexpectedError(errStr)
 		}
 		customers = append(customers, c)
 	}
 	return customers, nil
 }
 
-func (d CustomerRepositoryDB) ByID(id string) (*Customer, error) {
+func (d CustomerRepositoryDB) ByID(id string) (*Customer, *errs.AppErrors) {
 	customerSQLQuery := "SELECT customer_id, name, city, zipcode, date_of_birth, status FROM customers WHERE customer_id=?;"
 
 	row := d.client.QueryRow(customerSQLQuery, id)
 	var c Customer
 	err := row.Scan(&c.Id, &c.Name, &c.City, &c.ZipCode, &c.DateOfBirth, &c.Status)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errs.NewNotFoundError("Customer not found")
+		}
 		log.Println("Error while scanning customer table" + err.Error())
-		return nil, err
+		return nil, errs.NewUnexpectedError("Unexpected database error")
 	}
 	return &c, nil
 }
