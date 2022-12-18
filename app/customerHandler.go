@@ -3,6 +3,7 @@ package app
 import (
 	"HexagonalArch/service"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -13,7 +14,12 @@ type CustomerHandlers struct {
 }
 
 func (h *CustomerHandlers) getAllCustomers(w http.ResponseWriter, r *http.Request) {
-	customers, err := h.customerService.GetAllCustomers()
+	status_filter := r.URL.Query().Get("status")
+	fmt.Println("Status filter: " + status_filter)
+	filters := map[string] string {
+		"status": status_filter,
+	}
+	customers, err := h.customerService.GetAllCustomers(&filters)
 	if err != nil {
 		writeResponse(w, err.Code, err.AsMessage())
 	} else {

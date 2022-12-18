@@ -3,6 +3,7 @@ package domain
 import (
 	"HexagonalArch/errs"
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -13,9 +14,26 @@ type CustomerRepositoryDB struct {
 	client *sql.DB
 }
 
-func (d CustomerRepositoryDB) FindAll() ([]Customer, *errs.AppErrors) {
-	findAllSQLQuery := "SELECT customer_id, name, city, zipcode, date_of_birth, status FROM customers;"
+const (
+	customerStatusFilter = "status"
+)
 
+func (d CustomerRepositoryDB) FindAll(filters *map[string]string) ([]Customer, *errs.AppErrors) {
+	filterQuery := ""
+	if filters != nil {
+		for filter, val := range *filters {
+			if filter == customerStatusFilter && val != "" {
+				filterQuery += "status = "
+				filterQuery += val
+			}
+		}
+	}
+	findAllSQLQuery := "SELECT customer_id, name, city, zipcode, date_of_birth, status FROM customers"
+	if filterQuery != "" {
+		findAllSQLQuery += " WHERE " + filterQuery
+	}
+	findAllSQLQuery += ";"
+	fmt.Println(findAllSQLQuery)
 	rows, err := d.client.Query(findAllSQLQuery)
 	if err != nil {
 		errStr := "Error while querying customer table " + err.Error()
